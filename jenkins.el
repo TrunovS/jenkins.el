@@ -150,7 +150,7 @@
   "Jenkins url for get list of jobs in queue and their summaries."
   (format (concat
            "%s"
-           (if jenkins-viewname "view/%s/" jenkins-viewname "")
+           (if jenkins-viewname "me/my-views/view/%s/" jenkins-viewname "")
            "api/json?depth=2&tree=name,jobs[name,"
            "lastSuccessfulBuild[result,timestamp,duration,id],"
            "lastFailedBuild[result,timestamp,duration,id],"
