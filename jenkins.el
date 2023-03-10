@@ -165,7 +165,7 @@
            "%sjob/%s/"
            "api/json?depth=1&tree=builds"
            "[number,timestamp,result,url,building,"
-           "culprits[fullName]]")
+           "culprits[fullName],description,duration]")
           (get-jenkins-url) jobname))
 
 (defun jenkins--setup-variables ()
@@ -303,11 +303,14 @@
               (convert-item (item)
                   (list
                    (retrieve 'number item)
+                   :description (retrieve 'description item)
+                   :duration (format "~%fm"  (/ (retrieve 'duration item) 60000.0))
                    :author (let ((culprits (cdr (assoc 'culprits values))))
                              (if (> (length culprits) 0)
                                  (cdar (aref culprits 0)) "---"))
                    :url (retrieve 'url item)
-                   :timestring (jenkins--time-since-to-text (/ (retrieve 'timestamp item) 1000))
+                   :timestring (format-time-string "%d-%m-%Y %H:%M:%S %Z" (seconds-to-time (/ (retrieve 'timestamp item) 1000)))
+                   ;(jenkins--time-since-to-text (/ (retrieve 'timestamp item) 1000))
                    :building (retrieve 'building item)
                    :result (retrieve 'result item)))
               (vector-take (N vec)
@@ -474,6 +477,8 @@
 (defun jenkins-job-details-screen (jobname)
   "Jenkins job detailization screen, JOBNAME."
   (let* ((job-details (jenkins-get-job-details jobname))
+         (description (plist-get job-details :description))
+         (duration (plist-get job-details :duration))
          (jobname (plist-get job-details :name))
          (builds (plist-get job-details :builds))
          (latest (assoc (plist-get job-details :latestFinished) builds))
@@ -497,10 +502,12 @@
            (apply 'concat
                   (--map
                    (propertize
-                    (format "- Job #%s, %s %s\n"
+                    (format "- Job #%s, %s %s %s [%s]\n"
                             (car it)
+                            (plist-get (cdr it) :duration)
                             (plist-get (cdr it) :author)
                             (plist-get (cdr it) :timestring)
+                            (plist-get (cdr it) :description)
                             )
                     'jenkins-build-number
                     (car it)
